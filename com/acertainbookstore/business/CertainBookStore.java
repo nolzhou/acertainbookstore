@@ -1,15 +1,7 @@
 package com.acertainbookstore.business;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -317,7 +309,30 @@ public class CertainBookStore implements BookStore, StockManager {
 	 */
 	@Override
 	public synchronized List<Book> getTopRatedBooks(int numBooks) throws BookStoreException {
-		throw new BookStoreException();
+//		throw new BookStoreException();
+		if (numBooks < 0) {
+			throw new BookStoreException("numBooks = " + numBooks + ", but it must be positive");
+		}
+
+		// Get all books that are rated.
+		List<BookStoreBook> listAllRated = bookMap.entrySet().stream().map(pair -> pair.getValue())
+				.filter(book -> book.getNumTimesRated() > 0).collect(Collectors.toList());
+
+		// Sort the list to descending order
+		Collections.sort(listAllRated, new Comparator<BookStoreBook>() {
+			@Override
+			public int compare(BookStoreBook bookA, BookStoreBook bookB) {
+				return bookA.getAverageRating() - bookB.getAverageRating() >= 0.0 ? 1 : -1;
+			}
+		});
+
+		// Find numBooks indices of books that is top-rated.
+		int rangeRatedBooks = Math.min(listAllRated.size(), numBooks);
+
+		// Return the top-rated books.
+		return listAllRated.stream().limit(rangeRatedBooks)
+				.map(book -> book.immutableBook())
+				.collect(Collectors.toList());
 	}
 
 	/*
